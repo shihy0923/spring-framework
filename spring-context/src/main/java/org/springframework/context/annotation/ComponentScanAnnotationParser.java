@@ -16,14 +16,6 @@
 
 package org.springframework.context.annotation;
 
-import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Pattern;
-
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -32,15 +24,14 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.core.type.filter.AbstractTypeHierarchyTraversingFilter;
-import org.springframework.core.type.filter.AnnotationTypeFilter;
-import org.springframework.core.type.filter.AspectJTypeFilter;
-import org.springframework.core.type.filter.AssignableTypeFilter;
-import org.springframework.core.type.filter.RegexPatternTypeFilter;
-import org.springframework.core.type.filter.TypeFilter;
+import org.springframework.core.type.filter.*;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
+
+import java.lang.annotation.Annotation;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Parser for the @{@link ComponentScan} annotation.
@@ -71,7 +62,6 @@ class ComponentScanAnnotationParser {
 		this.beanNameGenerator = beanNameGenerator;
 		this.registry = registry;
 	}
-
 
 	public Set<BeanDefinitionHolder> parse(AnnotationAttributes componentScan, final String declaringClass) {
 		Assert.state(this.environment != null, "Environment must not be null");
@@ -113,6 +103,7 @@ class ComponentScanAnnotationParser {
 		}
 
 		Set<String> basePackages = new LinkedHashSet<String>();
+		//通过@ComponentScan(basePackages = {"com.tuling.testbfpostprocessor"})，获取basePackages的值
 		String[] basePackagesArray = componentScan.getStringArray("basePackages");
 		for (String pkg : basePackagesArray) {
 			String[] tokenized = StringUtils.tokenizeToStringArray(this.environment.resolvePlaceholders(pkg),
@@ -125,13 +116,15 @@ class ComponentScanAnnotationParser {
 		if (basePackages.isEmpty()) {
 			basePackages.add(ClassUtils.getPackageName(declaringClass));
 		}
-
+        //添加过滤器，正在被解析的@Configuration类不会再解析一边。
 		scanner.addExcludeFilter(new AbstractTypeHierarchyTraversingFilter(false, false) {
 			@Override
 			protected boolean matchClassName(String className) {
+			//该过滤器的过滤规则，是比较当前正在解析的@Configuration类的名称是否和@ComponentScan扫描到的类的类名相等(因为当前正在解析的@Configuration类，可能也会在@ComponentScan注解的扫描范围内，避免重复在容器中注册)
 				return declaringClass.equals(className);
 			}
 		});
+		//将@ComponentScan注解的basePackages属性对应的包名下的组件(即@Component一派的注解标注的类)扫描出来成为BeanDefinition，并注册到容器中（若扫描出来的BeanDefinition对应的类，定义了@Bean，暂不处理这个@Bean）。
 		return scanner.doScan(StringUtils.toStringArray(basePackages));
 	}
 

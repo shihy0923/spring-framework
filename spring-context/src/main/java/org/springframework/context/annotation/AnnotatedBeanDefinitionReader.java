@@ -16,8 +16,6 @@
 
 package org.springframework.context.annotation;
 
-import java.lang.annotation.Annotation;
-
 import org.springframework.beans.factory.annotation.AnnotatedGenericBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.AutowireCandidateQualifier;
@@ -28,6 +26,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.EnvironmentCapable;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.util.Assert;
+
+import java.lang.annotation.Annotation;
 
 /**
  * Convenient adapter for programmatic registration of annotated bean classes.
@@ -80,6 +80,7 @@ public class AnnotatedBeanDefinitionReader {
 		Assert.notNull(environment, "Environment must not be null");
 		this.registry = registry;
 		this.conditionEvaluator = new ConditionEvaluator(registry, environment, null);
+		//注册7个spring内部自定义的工厂后处理器和Bean后处理器到容器中
 		AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);
 	}
 

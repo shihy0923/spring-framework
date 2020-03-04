@@ -16,15 +16,6 @@
 
 package org.springframework.beans.factory.support;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.TypeConverter;
@@ -32,14 +23,13 @@ import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.BeanDefinitionHolder;
-import org.springframework.beans.factory.config.RuntimeBeanNameReference;
-import org.springframework.beans.factory.config.RuntimeBeanReference;
-import org.springframework.beans.factory.config.TypedStringValue;
+import org.springframework.beans.factory.config.*;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
+import java.lang.reflect.Array;
+import java.util.*;
 
 /**
  * Helper class for use in bean factory implementations,
@@ -103,10 +93,13 @@ class BeanDefinitionValueResolver {
 	public Object resolveValueIfNecessary(Object argName, Object value) {
 		// We must check each value to see whether it requires a runtime reference
 		// to another bean to be resolved.
+		////判断解析的值是不是 运行时 bean 的引用
 		if (value instanceof RuntimeBeanReference) {
+			//解析引用
 			RuntimeBeanReference ref = (RuntimeBeanReference) value;
 			return resolveReference(argName, ref);
 		}
+		//若 value 是 RuntimeBeanNameReference
 		else if (value instanceof RuntimeBeanNameReference) {
 			String refName = ((RuntimeBeanNameReference) value).getBeanName();
 			refName = String.valueOf(doEvaluate(refName));
@@ -116,6 +109,7 @@ class BeanDefinitionValueResolver {
 			}
 			return refName;
 		}
+		//是 BeanDefinitionHolder
 		else if (value instanceof BeanDefinitionHolder) {
 			// Resolve BeanDefinitionHolder: contains BeanDefinition with name and aliases.
 			BeanDefinitionHolder bdHolder = (BeanDefinitionHolder) value;
@@ -128,6 +122,7 @@ class BeanDefinitionValueResolver {
 					ObjectUtils.getIdentityHexString(bd);
 			return resolveInnerBean(argName, innerBeanName, bd);
 		}
+		//处理 array 的
 		else if (value instanceof ManagedArray) {
 			// May need to resolve contained runtime references.
 			ManagedArray array = (ManagedArray) value;
@@ -336,8 +331,11 @@ class BeanDefinitionValueResolver {
 	 */
 	private Object resolveReference(Object argName, RuntimeBeanReference ref) {
 		try {
+			//获取 bean 的引用的名称
 			String refName = ref.getBeanName();
+			//调用值解析器来解析 bean 的名称
 			refName = String.valueOf(doEvaluate(refName));
+			//判断父容器是否能够解析
 			if (ref.isToParent()) {
 				if (this.beanFactory.getParentBeanFactory() == null) {
 					throw new BeanCreationException(
@@ -348,7 +346,9 @@ class BeanDefinitionValueResolver {
 				return this.beanFactory.getParentBeanFactory().getBean(refName);
 			}
 			else {
+				//解析出来的 refName 去容器中获取 bean(getBean->doGetBean。。。。。。。。。。。 )
 				Object bean = this.beanFactory.getBean(refName);
+				//保存到缓存中
 				this.beanFactory.registerDependentBean(refName, this.beanName);
 				return bean;
 			}

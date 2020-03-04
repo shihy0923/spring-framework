@@ -16,17 +16,8 @@
 
 package org.springframework.context.annotation;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.annotation.AnnotatedGenericBeanDefinition;
@@ -36,12 +27,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.groovy.GroovyBeanDefinitionReader;
 import org.springframework.beans.factory.parsing.SourceExtractor;
-import org.springframework.beans.factory.support.AbstractBeanDefinitionReader;
-import org.springframework.beans.factory.support.BeanDefinitionReader;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.BeanNameGenerator;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.beans.factory.support.*;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.annotation.ConfigurationCondition.ConfigurationPhase;
 import org.springframework.core.annotation.AnnotationAttributes;
@@ -51,6 +37,9 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.util.StringUtils;
+
+import java.lang.reflect.Method;
+import java.util.*;
 
 /**
  * Reads a given fully-populated set of ConfigurationClass instances, registering bean
@@ -112,6 +101,7 @@ class ConfigurationClassBeanDefinitionReader {
 	 */
 	public void loadBeanDefinitions(Set<ConfigurationClass> configurationModel) {
 		TrackedConditionEvaluator trackedConditionEvaluator = new TrackedConditionEvaluator();
+		//遍历ConfigurationClassParser.class的configurationClasses属性里面的ConfigurationClass
 		for (ConfigurationClass configClass : configurationModel) {
 			loadBeanDefinitionsForConfigurationClass(configClass, trackedConditionEvaluator);
 		}
@@ -132,15 +122,17 @@ class ConfigurationClassBeanDefinitionReader {
 			this.importRegistry.removeImportingClass(configClass.getMetadata().getClassName());
 			return;
 		}
-
+        //这里才是解析利用@Import注解导入的配置类为一个BeanDefinition，然后注册到容器中。
 		if (configClass.isImported()) {
 			registerBeanDefinitionForImportedConfigurationClass(configClass);
 		}
+		//这里是真正解析和注册ConfigurationClass对象中@Bean注解标注的方法为一个BeanDefinition
 		for (BeanMethod beanMethod : configClass.getBeanMethods()) {
 			loadBeanDefinitionsForBeanMethod(beanMethod);
 		}
 
 		loadBeanDefinitionsFromImportedResources(configClass.getImportedResources());
+		//执行ImportBeanDefinitionRegistrar的registerBeanDefinitions()方法
 		loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars());
 	}
 
@@ -170,6 +162,7 @@ class ConfigurationClassBeanDefinitionReader {
 	 * Read the given {@link BeanMethod}, registering bean definitions
 	 * with the BeanDefinitionRegistry based on its contents.
 	 */
+	//这里是真正解析和注册@Bean注解标注的方法为一个BeanDefinition
 	private void loadBeanDefinitionsForBeanMethod(BeanMethod beanMethod) {
 		ConfigurationClass configClass = beanMethod.getConfigurationClass();
 		MethodMetadata metadata = beanMethod.getMetadata();
@@ -203,7 +196,7 @@ class ConfigurationClassBeanDefinitionReader {
 			}
 			return;
 		}
-
+        //使用@Bean注解定义的Bean，其定义会用ConfigurationClassBeanDefinition存储
 		ConfigurationClassBeanDefinition beanDef = new ConfigurationClassBeanDefinition(configClass, metadata);
 		beanDef.setResource(configClass.getResource());
 		beanDef.setSource(this.sourceExtractor.extractSource(metadata, configClass.getResource()));
@@ -263,7 +256,7 @@ class ConfigurationClassBeanDefinitionReader {
 			logger.debug(String.format("Registering bean definition for @Bean method %s.%s()",
 					configClass.getMetadata().getClassName(), beanName));
 		}
-
+        //将解析好的@Bean注解对应的BeanDefinition注册到容器中
 		this.registry.registerBeanDefinition(beanName, beanDefToRegister);
 	}
 
@@ -369,6 +362,7 @@ class ConfigurationClassBeanDefinitionReader {
 	 * definition was created externally.
 	 */
 	@SuppressWarnings("serial")
+	//使用@Bean注解定义的Bean，其定义会用ConfigurationClassBeanDefinition存储
 	private static class ConfigurationClassBeanDefinition extends RootBeanDefinition implements AnnotatedBeanDefinition {
 
 		private final AnnotationMetadata annotationMetadata;

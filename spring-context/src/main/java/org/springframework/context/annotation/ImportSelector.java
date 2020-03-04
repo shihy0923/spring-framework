@@ -51,6 +51,29 @@ public interface ImportSelector {
 	 * Select and return the names of which class(es) should be imported based on
 	 * the {@link AnnotationMetadata} of the importing @{@link Configuration} class.
 	 */
+
+	/*
+	例子：https://www.cnblogs.com/heliusKing/p/11372014.html
+
+	//自定义逻辑返回需要导入的组件
+	public class MyImportSelector implements ImportSelector {
+
+		//返回值，就是到导入的配置类的全类名。
+		//AnnotationMetadata:当前标注@Import注解的类的所有注解信息
+		@Override
+		public String[] selectImports(AnnotationMetadata importingClassMetadata) {
+			//方法不要返回null值
+			return new String[]{"com.atguigu.bean.Blue","com.atguigu.bean.Yellow"};
+		}
+	}
+
+	@Configuration
+	@Import({Color.class,Red.class,MyImportSelector.class})//将这两个类导入到容器中
+	public class MainConfig2 {
+	}*/
+
+
+	//返回值，就是到导入的配置类的全类名。实现该接口，实现该方法，该方法会在ConfigurationClassParser类的private void processImports(ConfigurationClass configClass, SourceClass currentSourceClass,Collection<SourceClass> importCandidates, boolean checkForCircularImports) 方法中的自动调用
 	String[] selectImports(AnnotationMetadata importingClassMetadata);
 
 }

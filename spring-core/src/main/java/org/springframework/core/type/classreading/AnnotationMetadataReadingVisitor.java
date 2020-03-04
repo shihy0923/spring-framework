@@ -16,13 +16,6 @@
 
 package org.springframework.core.type.classreading;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.springframework.asm.AnnotationVisitor;
 import org.springframework.asm.MethodVisitor;
 import org.springframework.asm.Opcodes;
@@ -33,6 +26,8 @@ import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+
+import java.util.*;
 
 /**
  * ASM class visitor which looks for the class name and implemented types as
@@ -55,7 +50,8 @@ public class AnnotationMetadataReadingVisitor extends ClassMetadataReadingVisito
 	protected final Map<String, Set<String>> metaAnnotationMap = new LinkedHashMap<String, Set<String>>(4);
 
 	/**
-	 * Declared as a {@link LinkedMultiValueMap} instead of a {@link MultiValueMap}
+	 * Declared as a {@link LinkedMultiVal
+	 * ueMap} instead of a {@link MultiValueMap}
 	 * to ensure that the hierarchical ordering of the entries is preserved.
 	 * @see AnnotationReadingVisitorUtils#getMergedAnnotationAttributes
 	 */

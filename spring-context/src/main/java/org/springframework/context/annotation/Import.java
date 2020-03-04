@@ -57,6 +57,11 @@ public @interface Import {
 	 * {@link Configuration}, {@link ImportSelector}, {@link ImportBeanDefinitionRegistrar}
 	 * or regular component classes to import.
 	 */
+
+	//每个@Import可能导入三种类型的类 :
+	// 1. ImportSelector--ImportSelector类的selectImports方法引入的类会被解析成ConfigurationClass
+	// 2. ImportBeanDefinitionRegistrar
+	// 3. 其他类型，都当作配置类处理，也就是相当于使用了注解@Configuration的配置类--引入的类会被解析成ConfigurationClass
 	Class<?>[] value();
 
 }

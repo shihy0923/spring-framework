@@ -58,7 +58,9 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 * through {@link #register} calls and then manually {@linkplain #refresh refreshed}.
 	 */
 	public AnnotationConfigApplicationContext() {
+		//注册7个spring内部自定义的工厂后处理器和Bean后处理器
 		this.reader = new AnnotatedBeanDefinitionReader(this);
+		//设置环境和解析器
 		this.scanner = new ClassPathBeanDefinitionScanner(this);
 	}
 
@@ -80,6 +82,7 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 	 */
 	public AnnotationConfigApplicationContext(Class<?>... annotatedClasses) {
 		this();
+		//将我们的配置类注册到容器中(最终会调用registerBeanDefinition(String beanName, BeanDefinition beanDefinition)，其中的beanName会调用generateBeanName(BeanDefinition definition, BeanDefinitionRegistry registry)方法---根据自定义名称<value属性的值>定义beanName或者根据给全限定类名的首字母小写作为默认的beanName)
 		register(annotatedClasses);
 		refresh();
 	}

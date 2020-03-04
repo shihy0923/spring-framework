@@ -16,14 +16,13 @@
 
 package org.springframework.core.type.filter;
 
-import java.io.IOException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.core.type.ClassMetadata;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
+
+import java.io.IOException;
 
 /**
  * Type filter that is aware of traversing over hierarchy.
@@ -58,14 +57,17 @@ public abstract class AbstractTypeHierarchyTraversingFilter implements TypeFilte
 
 		// This method optimizes avoiding unnecessary creation of ClassReaders
 		// as well as visiting over those readers.
+		//检查当前类的注解是否符合规律规则
 		if (matchSelf(metadataReader)) {
 			return true;
 		}
+		//check 类名是否符合规则
 		ClassMetadata metadata = metadataReader.getClassMetadata();
-		if (matchClassName(metadata.getClassName())) {
+		if (matchClassName(metadata.getClassName())) {//这里会利用ComponentScanAnnotationParser.class中scanner.addExcludeFilter(new AbstractTypeHierarchyTraversingFilter(false, false)处加入的那个过滤器进行过滤。该过滤器的过滤规则，是比较当前正在解析的@Configuration类的名称是否和@ComponentScan扫描到的类的类名相等(因为当前正在解析的@Configuration类，可能也会在@ComponentScan注解的扫描范围内，避免重复在容器中注册)
 			return true;
 		}
 
+		//如果有继承父类
 		if (this.considerInherited) {
 			if (metadata.hasSuperClass()) {
 				// Optimization to avoid creating ClassReader for super class.
@@ -91,7 +93,7 @@ public abstract class AbstractTypeHierarchyTraversingFilter implements TypeFilte
 				}
 			}
 		}
-
+//如果有实现接口
 		if (this.considerInterfaces) {
 			for (String ifc : metadata.getInterfaceNames()) {
 				// Optimization to avoid creating ClassReader for super class

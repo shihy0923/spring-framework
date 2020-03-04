@@ -16,23 +16,19 @@
 
 package org.springframework.context.annotation;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.BeanDefinitionDefaults;
-import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.BeanNameGenerator;
+import org.springframework.beans.factory.support.*;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.EnvironmentCapable;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.Assert;
 import org.springframework.util.PatternMatchUtils;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * A bean definition scanner that detects bean candidates on the classpath,
@@ -265,26 +261,42 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 	 * @param basePackages the packages to check for annotated classes
 	 * @return set of beans registered if any for tooling registration purposes (never {@code null})
 	 */
+	///类路径Bean定义扫描器扫描给定包及其子包
+	//将@ComponentScan注解的basePackages属性对应的包名下的组件(即@Component一派的注解标注的类)扫描出来成为BeanDefinition，并注册到容器中（若扫描出来的BeanDefinition对应的类，定义了@Bean，暂不处理这个@Bean）。
 	protected Set<BeanDefinitionHolder> doScan(String... basePackages) {
 		Assert.notEmpty(basePackages, "At least one base package must be specified");
+		//创建一个集合，存放扫描到BeanDefinition的封装类
 		Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<BeanDefinitionHolder>();
+		//遍历扫描所有给定的包
 		for (String basePackage : basePackages) {
+			//shihytodo 扫描给定类路径，获取符合条件的BeanDefinition,主要是获取标注了@Comonent一派的注解的组件的BeanDefinition--最主要的方法，参考https://my.oschina.net/u/3670641/blog/3094597/print
 			Set<BeanDefinition> candidates = findCandidateComponents(basePackage);
+			//遍历扫描到的BeanDefinition
 			for (BeanDefinition candidate : candidates) {
+				//获取@Scope注解的值，即获取Bean的作用域
 				ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(candidate);
+				//为Bean设置作用域
 				candidate.setScope(scopeMetadata.getScopeName());
+				//创建beanName
 				String beanName = this.beanNameGenerator.generateBeanName(candidate, this.registry);
+				//如果扫描到的BeanDefinition不是Spring的注解BeanDefinition，则为Bean设置默认值，
+				//设置Bean的自动依赖注入装配属性等
 				if (candidate instanceof AbstractBeanDefinition) {
 					postProcessBeanDefinition((AbstractBeanDefinition) candidate, beanName);
 				}
+				//如果扫描到的BeanDefinition是Spring的注解BeanDefinition，则处理其通用的Spring注解
 				if (candidate instanceof AnnotatedBeanDefinition) {
+					//处理注解BeanDefinition中通用的注解，在分析注解Bean定义类读取器时已经分析过
 					AnnotationConfigUtils.processCommonDefinitionAnnotations((AnnotatedBeanDefinition) candidate);
 				}
+				//根据Bean名称检查指定的BeanDefinition是否需要在容器中注册，或者在容器中冲突
 				if (checkCandidate(beanName, candidate)) {
 					BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(candidate, beanName);
+					//根据注解中配置的作用域，为BeanDefinition应用相应的代理模式
 					definitionHolder =
 							AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
 					beanDefinitions.add(definitionHolder);
+					//向容器注册扫描到的BeanDefinition
 					registerBeanDefinition(definitionHolder, this.registry);
 				}
 			}

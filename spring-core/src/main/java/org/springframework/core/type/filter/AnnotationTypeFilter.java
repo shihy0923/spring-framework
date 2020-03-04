@@ -16,13 +16,13 @@
 
 package org.springframework.core.type.filter;
 
-import java.lang.annotation.Annotation;
-import java.lang.annotation.Inherited;
-
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.util.ClassUtils;
+
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Inherited;
 
 /**
  * A simple filter which matches classes with a given annotation,
@@ -74,16 +74,23 @@ public class AnnotationTypeFilter extends AbstractTypeHierarchyTraversingFilter 
 			Class<? extends Annotation> annotationType, boolean considerMetaAnnotations, boolean considerInterfaces) {
 
 		super(annotationType.isAnnotationPresent(Inherited.class), considerInterfaces);
+		//创建容器的时候就会给annotationType为默认值Component.class。
 		this.annotationType = annotationType;
+		//创建容器的时候就会给considerMetaAnnotations为默认值true。
 		this.considerMetaAnnotations = considerMetaAnnotations;
 	}
 
-
+	/*在这段代码代码中，可以解决我们之前的疑惑“Spring是怎么发现@Configuration、@Controller、@Service这些注解修饰的类的？”
+	原来@Configuration、@Controller、@Service这些注解其实都是@Component的派生注解，我们看这些注解的代码会发现，都有@Component注解修饰。而spring通过metadata.hasMetaAnnotation()方法获取到这些注解包含@Component，所以都可以扫描到*/
 	@Override
 	protected boolean matchSelf(MetadataReader metadataReader) {
+		//获取注解元数据，包含两个重要属性annotationSet(放类的注解)和metaAnnotationMap(放类的注解的注解)
 		AnnotationMetadata metadata = metadataReader.getAnnotationMetadata();
+		//check 注解及其注解的注解中是否包含@Component
+		//获取当前类的注解是否包含@Component    metadata.hasAnnotation    如：@Controller
+		//获取当前类的注解的原生注解是否包含@Component    metadata.hasMetaAnnotation   @Controller包含的@Component
 		return metadata.hasAnnotation(this.annotationType.getName()) ||
-				(this.considerMetaAnnotations && metadata.hasMetaAnnotation(this.annotationType.getName()));
+				(this.considerMetaAnnotations && metadata.hasMetaAnnotation(this.annotationType.getName()));//this.annotationType.getName())的值为org.springframework.stereotype.Component
 	}
 
 	@Override

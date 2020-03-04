@@ -16,14 +16,8 @@
 
 package org.springframework.context.annotation;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -36,6 +30,11 @@ import org.springframework.core.type.StandardAnnotationMetadata;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Utilities for identifying @{@link Configuration} classes.
@@ -77,6 +76,11 @@ abstract class ConfigurationClassUtils {
 	 * @param metadataReaderFactory the current factory in use by the caller
 	 * @return whether the candidate qualifies as (any kind of) configuration class
 	 */
+	// checkConfigurationClassCandidate()会判断BeanDefinition是否是一个配置类,并为BeanDefinition设置属性为lite或者full。
+	// 在这儿为BeanDefinition设置lite和full属性值是为了后面在使用
+	// 如果加了@Configuration，那么对应的BeanDefinition为full;
+	// 如果加了@Bean,@Component,@ComponentScan,@Import,@ImportResource这些注解，则为lite。
+	//lite和full均表示这个BeanDefinition对应的类是一个配置类
 	public static boolean checkConfigurationClassCandidate(BeanDefinition beanDef, MetadataReaderFactory metadataReaderFactory) {
 		String className = beanDef.getBeanClassName();
 		if (className == null || beanDef.getFactoryMethodName() != null) {
@@ -107,11 +111,14 @@ abstract class ConfigurationClassUtils {
 				return false;
 			}
 		}
-
+        //是否被@Configuration注解标识，
 		if (isFullConfigurationCandidate(metadata)) {
+			//将BeanDefinition属性标注为full
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
+		//是否被@Component、@ComponentScan、@Import、@ImportResource其中一个标注，或者方法上是否被@Bean注解标注
 		else if (isLiteConfigurationCandidate(metadata)) {
+			//将BeanDefinition属性标注为lite
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}
 		else {

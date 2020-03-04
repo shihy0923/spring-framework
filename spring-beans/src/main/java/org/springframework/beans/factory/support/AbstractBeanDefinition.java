@@ -16,13 +16,6 @@
 
 package org.springframework.beans.factory.support;
 
-import java.lang.reflect.Constructor;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.springframework.beans.BeanMetadataAttributeAccessor;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
@@ -34,6 +27,9 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
+import java.lang.reflect.Constructor;
+import java.util.*;
 
 /**
  * Base class for concrete, full-fledged {@link BeanDefinition} classes,
@@ -53,6 +49,8 @@ import org.springframework.util.StringUtils;
  * @see ChildBeanDefinition
  */
 @SuppressWarnings("serial")
+//最终全功能BeanDefinition实现类的基类，也就是这些类的共同属性和逻辑实现：
+// * GenericBeanDefinition,RootBeanDefinition,ChildBeanDefinition.
 public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccessor
 		implements BeanDefinition, Cloneable {
 
@@ -134,42 +132,58 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	 */
 	public static final String INFER_METHOD = "(inferred)";
 
-
+	// 当前bean定义的beanClass属性，注意并不一定是最终生成的bean所使用的class，--https://blog.csdn.net/andy_zhang2007/article/details/85413055
+	// 可能是 String, 也可能是 Class
 	private volatile Object beanClass;
 
+	// 目标 bean 的作用域，初始化为 "", 相当于 singleton
 	private String scope = SCOPE_DEFAULT;
 
+	// 是否抽象 bean定义
 	private boolean abstractFlag = false;
 
+	// 是否懒初始化
 	private boolean lazyInit = false;
 
+	// 自动装配模式 : 初始化为不要使用自动装配
 	private int autowireMode = AUTOWIRE_NO;
 
+	// 依赖检查 : 初始化为不要做依赖检查
 	private int dependencyCheck = DEPENDENCY_CHECK_NONE;
 
+	// 被当前bean定义所依赖的bean的名称
 	private String[] dependsOn;
 
+	// 是否作为自动装配候选 ， 初始化为 true
 	private boolean autowireCandidate = true;
 
+	// 作为自动装配候选时，是否作为主要候选, 初始化为 false (不作为主要候选)
 	private boolean primary = false;
 
 	private final Map<String, AutowireCandidateQualifier> qualifiers =
 			new LinkedHashMap<String, AutowireCandidateQualifier>(0);
 
+	// 是否允许访问非公开构造函数，非公开方法
+	// 该属性主要用于构造函数解析，初始化方法,析构方法解析，bean属性的set/get方法不受该属性影响
 	private boolean nonPublicAccessAllowed = true;
 
+	//调用构造函数时，是否采用宽松匹配
 	private boolean lenientConstructorResolution = true;
 
+	// 工厂bean名称
 	private String factoryBeanName;
 
+	// 工厂方法名称
 	private String factoryMethodName;
 
+	// 构造函数参数值
 	private ConstructorArgumentValues constructorArgumentValues;
 
 	private MutablePropertyValues propertyValues;
 
 	private MethodOverrides methodOverrides = new MethodOverrides();
 
+	// 初始化方法的名称
 	private String initMethodName;
 
 	private String destroyMethodName;
@@ -178,10 +192,19 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 
 	private boolean enforceDestroyMethod = true;
 
+// 是否是一个合成 BeanDefinition,
+	// 合成 在这里的意思表示这不是一个应用开发人员自己定义的 BeanDefinition, 而是程序
+	// 自己组装而成的一个 BeanDefinition, 例子 :
+	// 1. 自动代理的helper bean，一个基础设施bean，因为使用<aop:config> 被自动合成创建;
+	// 2. bean errorPageRegistrarBeanPostProcessor , Spring boot 自动配置针对Web错误页面的
+	// 一个bean，这个bean不需要应用开发人员定义，而是框架根据上下文自动合成组装而成；
 	private boolean synthetic = false;
 
+	// 当前bean 定义的角色，初始化为 ROLE_APPLICATION ， 提示这是一个应用bean
+	// 另外还有基础设施bean（仅供框架内部工作使用），和 支持bean
 	private int role = BeanDefinition.ROLE_APPLICATION;
 
+	// human readable,当前bean定义人类可读的描述文本
 	private String description;
 
 	private Resource resource;

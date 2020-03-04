@@ -16,16 +16,8 @@
 
 package org.springframework.context.annotation;
 
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.annotation.Lookup;
@@ -51,6 +43,13 @@ import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * A component provider that scans the classpath from a base package. It then
@@ -270,11 +269,14 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	 * @param basePackage the package to check for annotated classes
 	 * @return a corresponding Set of autodetected bean definitions
 	 */
+	//扫描给定类路径的包
 	public Set<BeanDefinition> findCandidateComponents(String basePackage) {
 		Set<BeanDefinition> candidates = new LinkedHashSet<BeanDefinition>();
 		try {
+		//补全扫描路径，扫描所有.class文件 classpath*:com/mydemo/**/*.class
 			String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
 					resolveBasePackage(basePackage) + '/' + this.resourcePattern;
+			//定位资源
 			Resource[] resources = this.resourcePatternResolver.getResources(packageSearchPath);
 			boolean traceEnabled = logger.isTraceEnabled();
 			boolean debugEnabled = logger.isDebugEnabled();
@@ -284,24 +286,37 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 				}
 				if (resource.isReadable()) {
 					try {
+						//通过ASM获取class元数据，并封装在MetadataReader元数据读取器中
 						MetadataReader metadataReader = this.metadataReaderFactory.getMetadataReader(resource);
+						//判断该类是否符合@CompoentScan的过滤规则
+						//过滤匹配排除excludeFilters排除过滤器(可以没有),包含includeFilter中的包含过滤器（至少包含一个）。--https://my.oschina.net/u/3670641/blog/3094597/print
+						// 判断这是否是一个符合候选条件的bean组件定义类--即是否有@Comonent一派的注解
+						// 如果符合条件的话，将其添加到候选类集合 : candidates
+						// 第一次判断 : 判断这是否是一个符合包含过滤器，并且不在排斥过滤器内的bean组件定义类--https://blog.csdn.net/andy_zhang2007/article/details/100049731
 						if (isCandidateComponent(metadataReader)) {
+							//把元数据转化为 BeanDefinition
 							ScannedGenericBeanDefinition sbd = new ScannedGenericBeanDefinition(metadataReader);
 							sbd.setResource(resource);
 							sbd.setSource(resource);
+							// 第二次判断 : 构造出BD之后再次检测是否符合候选条件
+							// 1. 独立类 + 具体实现类 或者
+							// 2. 独立类 + 抽象类 + 带有使用注解 Lookup 的方法
 							if (isCandidateComponent(sbd)) {
 								if (debugEnabled) {
 									logger.debug("Identified candidate component class: " + resource);
 								}
+								//加入到集合中
 								candidates.add(sbd);
 							}
 							else {
+								//不合格 不是顶级类、具体类
 								if (debugEnabled) {
 									logger.debug("Ignored because not a concrete top-level class: " + resource);
 								}
 							}
 						}
 						else {
+							//不符@CompoentScan过滤规则
 							if (traceEnabled) {
 								logger.trace("Ignored because not matching any filter: " + resource);
 							}
@@ -344,17 +359,24 @@ public class ClassPathScanningCandidateComponentProvider implements EnvironmentC
 	 * @param metadataReader the ASM ClassReader for the class
 	 * @return whether the class qualifies as a candidate component
 	 */
+	//判断元信息读取器读取的类是否符合容器定义的注解过滤规则
+	//@ComponentScan的过滤规则支持5种 （注解、类、正则、aop、自定义）--https://my.oschina.net/u/3670641/blog/3094597/print
 	protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOException {
+		//如果读取的类的注解在排除注解过滤规则中，返回false。这里会利用ComponentScanAnnotationParser.class中scanner.addExcludeFilter(new AbstractTypeHierarchyTraversingFilter(false, false)处加入的那个过滤器进行过滤。该过滤器的过滤规则，是比较当前正在解析的@Configuration类的名称是否和@ComponentScan扫描到的类的类名相等(因为当前正在解析的@Configuration类，可能也会在@ComponentScan注解的扫描范围内，避免重复在容器中注册)
 		for (TypeFilter tf : this.excludeFilters) {
 			if (tf.match(metadataReader, this.metadataReaderFactory)) {
 				return false;
 			}
 		}
+		//如果读取的类的注解在包含的注解的过滤规则中，则返回ture
 		for (TypeFilter tf : this.includeFilters) {
+			//判断当前类的注解是否match规则
 			if (tf.match(metadataReader, this.metadataReaderFactory)) {
+				//是否有@Conditional注解，进行相关处理
 				return isConditionMatch(metadataReader);
 			}
 		}
+		//如果读取的类的注解既不在排除规则，也不在包含规则中，则返回false
 		return false;
 	}
 

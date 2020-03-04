@@ -58,6 +58,40 @@ public interface ImportBeanDefinitionRegistrar {
 	 * @param importingClassMetadata annotation metadata of the importing class
 	 * @param registry current bean definition registry
 	 */
+
+	/*
+	例子：https://www.cnblogs.com/heliusKing/p/11372014.html
+
+	public class MyImportBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
+
+		*//**
+		 * AnnotationMetadata：当前类的注解信息
+		 * BeanDefinitionRegistry:BeanDefinition注册类；
+		 * 把所有需要添加到容器中的bean，调用BeanDefinitionRegistry.registerBeanDefinition手工注册进来
+		 *//*
+		@Override
+		public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
+
+			boolean definition = registry.containsBeanDefinition("com.atguigu.bean.Red");
+			boolean definition2 = registry.containsBeanDefinition("com.atguigu.bean.Blue");
+			if(definition && definition2){
+				//指定Bean定义信息；（Bean的类型，Bean。。。）
+				RootBeanDefinition beanDefinition = new RootBeanDefinition(RainBow.class);
+				//注册一个Bean，指定bean名
+				registry.registerBeanDefinition("rainBow", beanDefinition);
+			}
+		}
+
+	}
+
+	@Configuration
+    @Import({Color.class,Red.class,MyImportSelector.class,MyImportBeanDefinitionRegistrar.class})
+   //@Import导入组件，id默认是组件的全类名
+   public class MainConfig2 {}
+*/
+
+	//该方法会在ConfigurationClassBeanDefinitionReader.class的loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars());代码处
+	//进行调用
 	void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry);
 
 }
