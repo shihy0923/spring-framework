@@ -41,6 +41,13 @@ class PostProcessorRegistrationDelegate {
 			ConfigurableListableBeanFactory beanFactory, List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
 
 		// Invoke BeanDefinitionRegistryPostProcessors first, if any.
+
+		//processedBeans用于存放已经处理过的BeanFactoryPostProcessor，在先被处理的BeanFactoryPostProcessor类型中，会将其他的BeanFactoryPostProcessor类型的BeanDefinition注册到容器中。然后根据类型和是否实现了排序接口，从容器中取出来这些BeanFactoryPostProcessor类型的Beandefinite，实例化，调用他们的方法，所以在一个
+		// BeanFactoryPostProcessor类型中可以向容器中注册别的BeanFactoryPostProcessor类型。
+		//如dubbo和springboot继承的流程中：ConfigurationClassPostProcessor类，它实现了PriorityOrdered接口，它会比其他的BeanFactoryPostProcessor类型先实例化，所以它的postProcessBeanDefinitionRegistry方法也会先被调用，解析@configuration、@Import等注解的类，通过@import注入的DubboComponentScanRegistrar配置类（实现了ImportBeanDefinitionRegistrar接口），它的方法registerBeanDefinitions就会在解析的时候被执行，在registerBeanDefinitions方法中，会向容器中注入ServiceAnnotationBeanPostProcessor这个BeanFactoryPostProcessor类型的BeanDefinition。
+		// 当ConfigurationClassPostProcessor类postProcessBeanDefinitionRegistry方法执行完，容器中就有了ServiceAnnotationBeanPostProcessor的Beandefinition。
+		//后面根据String[] postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);这种方法，获取到所有BeanDefinitionRegistryPostProcessor.class类型的Beanfinition，其中就包括了ServiceAnnotationBeanPostProcessor，调用getBean方法进行实例化。然后执行invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);方法，调用ServiceAnnotationBeanPostProcessor实例的postProcessBeanDefinitionRegistry方法，将标有dubbo注解的类（@Service）的Beandefinition注册到容器中。
+
 		Set<String> processedBeans = new HashSet<String>();
 		//判断 IOC 容器是不是 BeanDefinitionRegistry 的？
 		if (beanFactory instanceof BeanDefinitionRegistry) {
@@ -81,7 +88,7 @@ class PostProcessorRegistrationDelegate {
 			for (String ppName : postProcessorNames) {
 				//判断是不是实现了 PriorityOrdered 接口的
 				if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
-					//添加到 currentRegistryProcessors 的集合中
+					//对BeanDefinitionRegistryPostProcessor接口类型的BeanDefinition进行实例化并添加到 currentRegistryProcessors 的集合中
 					currentRegistryProcessors.add(beanFactory.getBean(ppName, BeanDefinitionRegistryPostProcessor.class));
 					//添加到 processedBeans 的集合中
 					processedBeans.add(ppName);
@@ -96,6 +103,8 @@ class PostProcessorRegistrationDelegate {
 
 			// Next, invoke the BeanDefinitionRegistryPostProcessors that implement Ordered.
 			//第二步:去容器中查询是否有 BeanDefinitionRegistryPostProcessor 类型的，调用postProcessBeanDefinitionRegistry 方法--排除被处理过的(实现了 PriorityOrdered 接口的)，并且实现了 Ordered 接口的
+			//这里再重新执行一边getBeanNamesForType方法而不是复用上面的结果，是因为防止上一步的BeanDefinitionRegistryPostProcessors类，又往容器里面注册了新的
+			//BeanDefinitionRegistryPostProcessors类型的Beandefiniton
 			postProcessorNames = beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			for (String ppName : postProcessorNames) {
 				//排除被处理过的，并且实现了 Ordered 接口的
