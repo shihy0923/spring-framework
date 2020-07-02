@@ -1,7 +1,9 @@
 buildscript {
 	repositories {
-		maven { url "https://repo.spring.io/plugins-release" }
-	}
+              maven { url "https://maven.aliyun.com/repository/spring-plugin" }
+              maven{ url "https://maven.aliyun.com/nexus/content/repositories/spring-plugin"}
+              maven { url "https://repo.spring.io/plugins-release" }
+           }
 	dependencies {
 		classpath("io.spring.gradle:propdeps-plugin:0.0.9.RELEASE")
 		classpath("io.spring.gradle:docbook-reference-plugin:0.3.1")
@@ -129,9 +131,10 @@ configure(allprojects) { project ->
 	}
 
 	repositories {
-		maven { url "https://repo.spring.io/libs-release" }
-	}
-
+              maven { url "https://maven.aliyun.com/repository/central" }
+              maven { url "https://repo.spring.io/libs-release" }
+              mavenCentral()
+           }
 	dependencies {
 		testCompile("junit:junit:${junitVersion}") {
 			exclude group:'org.hamcrest', module:'hamcrest-core'
