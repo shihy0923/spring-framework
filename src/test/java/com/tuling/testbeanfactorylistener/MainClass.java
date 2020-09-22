@@ -12,6 +12,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
  */
 public class MainClass {
     public static void main(String[] args) {
+        System.out.println("qqqqqq");
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(MainConfig.class);
 //手动发布一个事件
         ctx.publishEvent(new ApplicationEvent("我手动发布了一个事件") {

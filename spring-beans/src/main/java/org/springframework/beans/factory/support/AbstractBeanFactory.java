@@ -1631,6 +1631,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		// caller actually wants a reference to the factory.
 		//现在我们有了个bean的实例，这个实例可能会是正常的bean或者是FactoryBean
 		//如果是FactoryBean我们使用它创建实例，但是如果用户想要直接获取工厂实例而不是工厂的getObject()方法对应的实例那么传入的name应该加前缀&
+		// 现在可以确定的是，这个bean实例，要么是个正常bean，要么是个FactoryBean
+		// 这两个判断条件
+		//第一个是说如果这个bean实例不是FactoryBean，就直接返回beanInstance,因为不是FactoryBean那肯定就是正常的bean了
+		//第二个是说，如果本来期望返回的就是FactoryBean，那么也可以就直接返回了
 		if (!(beanInstance instanceof FactoryBean) || BeanFactoryUtils.isFactoryDereference(name)) {
 			return beanInstance;
 		}

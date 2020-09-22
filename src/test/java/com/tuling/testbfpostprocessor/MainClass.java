@@ -12,10 +12,10 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 public class MainClass {
     public static void main(String[] args) {
         AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(MainConfig.class);
-        TestBeanDefinationRegisterPostProcessor obj= (TestBeanDefinationRegisterPostProcessor) ctx.getBean("testBeanDefinationRegisterPostProcessor");
+        /*TestBeanDefinationRegisterPostProcessor obj= (TestBeanDefinationRegisterPostProcessor) ctx.getBean("testBeanDefinationRegisterPostProcessor");
         obj.test();
         TuLingLog1 obj2= (TuLingLog1) ctx.getBean("tuLingLog1");
-        obj2.test();
+        obj2.test();*/
 
     }
 }
