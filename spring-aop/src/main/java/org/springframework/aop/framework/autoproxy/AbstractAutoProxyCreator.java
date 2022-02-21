@@ -16,20 +16,9 @@
 
 package org.springframework.aop.framework.autoproxy;
 
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.aopalliance.aop.Advice;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.aop.Advisor;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.TargetSource;
@@ -48,6 +37,16 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.SmartInstantiationAwareBeanPostProcessor;
 import org.springframework.util.StringUtils;
+
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * {@link org.springframework.beans.factory.config.BeanPostProcessor} implementation
@@ -238,10 +237,13 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) throws BeansException {
 		Object cacheKey = getCacheKey(beanClass, beanName);
 
+		//决定是否要提前增强当前bean
 		if (beanName == null || !this.targetSourcedBeans.contains(beanName)) {
+			// 被增强过的bean不会再次被增强
 			if (this.advisedBeans.containsKey(cacheKey)) {
 				return null;
 			}
+			// 基础类型的bean(是切面、切入点、增强器等等的对象)不会被提前增强、被跳过的bean不会被提前增强
 			if (isInfrastructureClass(beanClass) || shouldSkip(beanClass, beanName)) {
 				this.advisedBeans.put(cacheKey, Boolean.FALSE);
 				return null;
@@ -251,6 +253,8 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		// Create proxy here if we have a custom TargetSource.
 		// Suppresses unnecessary default instantiation of the target bean:
 		// The TargetSource will handle target instances in a custom fashion.
+			// 原型bean的额外处理：TargetSource
+			// 此处的设计与自定义TargetSource相关，单实例bean必定返回null
 		if (beanName != null) {
 			TargetSource targetSource = getCustomTargetSource(beanClass, beanName);
 			if (targetSource != null) {

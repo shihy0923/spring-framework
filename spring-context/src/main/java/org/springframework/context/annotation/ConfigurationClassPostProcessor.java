@@ -335,8 +335,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			//再次获取容器中bean定义数量  如果大于 之前获取的bean定义数量，则说明有新的bean注册到容器中，需要再次解析---已经注册的 bean 定义个数大于 最先开始 开始系统+主配置类的 (发生过解析)
 			// 这里判断registry.getBeanDefinitionCount() > candidateNames.length的目的是为了知道reader.loadBeanDefinitions(configClasses)这一步有没有向BeanDefinitionMap中添加新的BeanDefinition
 			// 这样就需要再次遍历新加入的BeanDefinition，并判断这些bean是否已经被解析过了，如果未解析，需要重新进行解析
-			// @ComponentScan扫描出来的类，实际上在parser.parse()这一步已经全部封装成BeanDefinition注册到容器，并且设置属性为lite或者full(俗称“已解析”，对应下面的ConfigurationClassUtils.checkConfigurationClassCandidate(bd, this.metadataReaderFactory)代码会进行验证是否已解析)
-			//而@Import进来的配置类，并没有生成BeanDefinition注册到容器。所以为什么还需要做这个判断，目前没看懂，似乎没有任何意义。
+			// @ComponentScan扫描出来的类，实际上在parser.parse()这一步已经全部封装成BeanDefinition注册到容器，并且设置属性为lite或者full(俗称“已解析”，对应下面的ConfigurationClassUtils.checkConfigurationClassCandidate(bd, this.metadataReaderFactory)代码会进行验证是否已解析),@Import的类也在			this.reader.loadBeanDefinitions(configClasses);中生成了BeanDefinition，且进行@Bean解析，那么为什么说，还可能会有未被继续的配置类呢？那是因为，通过ImportBeanDefinitionRegistrar导入的BeanDefinition可能是有ImportBeanDefinitionRegistrar将新的BeanDefinition注入容器，而这个BeanDefinition正好是一个@Component注解的配置类。
 			if (registry.getBeanDefinitionCount() > candidateNames.length) {
 				//获取系统+自己解析的+mainconfig 的 bean 定义信息
 				String[] newCandidateNames = registry.getBeanDefinitionNames();
